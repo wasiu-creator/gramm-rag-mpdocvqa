@@ -19,10 +19,10 @@ services:
       - ./data_volume/ocr:/app/data/mpdocvqa/ocr
       - ./data_volume/images:/app/data/mpdocvqa/images
       - ./data_volume/imdbs:/app/data/mpdocvqa/imdbs
-      # Persist computed artefacts between runs
-      - ./cache/parsed:/app/parsed/mpdocvqa
-      - ./cache/embeddings:/app/embeddings/mpdocvqa
-      - ./cache/graphs:/app/graphs/mpdocvqa
+      # Persist computed artefacts between runs (flat layout)
+      - ./cache/parsed:/app/parsed
+      - ./cache/embeddings:/app/embeddings
+      - ./cache/graphs:/app/graphs
       - ./cache/results:/app/results
     shm_size: "8gb"
     deploy:

@@ -46,9 +46,9 @@ RUN mkdir -p \
     /app/data/mpdocvqa/ocr \
     /app/data/mpdocvqa/images \
     /app/data/mpdocvqa/imdbs \
-    /app/parsed/mpdocvqa \
-    /app/embeddings/mpdocvqa \
-    /app/graphs/mpdocvqa \
+    /app/parsed \
+    /app/embeddings \
+    /app/graphs \
     /app/results/models/hgt_mpdocvqa \
     /app/results/models/router_mpdocvqa \
     /app/results/figures \
