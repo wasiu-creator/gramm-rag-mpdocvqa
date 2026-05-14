@@ -1,0 +1,31 @@
+# Large data — do not commit
+data/mpdocvqa/ocr/
+data/mpdocvqa/images/
+data/mpdocvqa/imdbs/
+data_volume/
+cache/
+parsed/
+embeddings/
+graphs/
+results/
+*.pt
+*.bin
+*.safetensors
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.venv/
+venv/
+
+# Jupyter
+.ipynb_checkpoints/
+*_executed.ipynb
+
+# Secrets — never commit
+.env
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  gramm-rag-mpdocvqa:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: gramm-rag-mpdocvqa:latest
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - TOGETHER_API_KEY=${TOGETHER_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    ports:
+      - "8888:8888"
+    volumes:
+      # MP-DocVQA data — provide your local copy via these mounts
+      - ./data_volume/ocr:/app/data/mpdocvqa/ocr
+      - ./data_volume/images:/app/data/mpdocvqa/images
+      - ./data_volume/imdbs:/app/data/mpdocvqa/imdbs
+      # Persist computed artefacts between runs
+      - ./cache/parsed:/app/parsed/mpdocvqa
+      - ./cache/embeddings:/app/embeddings/mpdocvqa
+      - ./cache/graphs:/app/graphs/mpdocvqa
+      - ./cache/results:/app/results
+    shm_size: "8gb"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

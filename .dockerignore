@@ -1,0 +1,16 @@
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+.git/
+.ipynb_checkpoints/
+*.egg-info/
+*.dist-info/
+data/
+data_volume/
+cache/
+parsed/
+embeddings/
+graphs/
+results/
+*_executed.ipynb
+.env
