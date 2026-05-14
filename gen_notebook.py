@@ -676,7 +676,7 @@ cells.append(code(
     "        parsed = json.loads(pf.read_text(encoding='utf-8'))\n"
     "        if any('temporal_markers' in e for e in parsed.get('elements', [])):\n"
     "            continue\n"
-    "        parsed = annotate_parsed_elements(parsed, None, use_llm=False)\n"
+    "        parsed = annotate_parsed_elements(parsed, None, use_llm_fallback=False)\n"
     "        pf.write_text(json.dumps(parsed, indent=2), encoding='utf-8')\n"
     "        annotated += 1\n"
     "    except Exception as e:\n"
