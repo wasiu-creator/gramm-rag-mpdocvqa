@@ -7,7 +7,13 @@ Implements:
   - ANLS  (Average Normalised Levenshtein Similarity) — DocVQA standard
   - F1    (token-level F1, SQuAD-style)
   - Accuracy (exact match after normalisation)
-  - APPA  (Abstention Precision and recall for unanswerable questions)
+  - Abstention Precision/Recall (unanswerable-question detection)
+  - APPA  (Answer-Page Prediction Accuracy) — MP-DocVQA retrieval localisation:
+           did retrieval surface the page that actually holds the answer?
+
+  NOTE: `compute_appa()` (abstention) and `compute_answer_page_accuracy()`
+  (the proposal's APPA) are DIFFERENT metrics that historically shared the
+  "APPA" acronym. They are kept distinct here on purpose.
 
 All metrics operate on lists of (prediction, gold_answer) pairs.
 """
@@ -175,6 +181,51 @@ def compute_appa(
     }
 
 
+# ─── APPA: Answer-Page Prediction Accuracy (retrieval localisation) ───────────
+# Distinct from compute_appa() above (abstention). This is the proposal's
+# MP-DocVQA metric: of the top-k retrieved nodes, do any sit on the page
+# that actually contains the gold answer?
+
+def compute_answer_page_accuracy(
+    retrieved_pages: list,
+    gold_pages: list,
+    k_values: tuple = (1, 5, 10),
+) -> dict:
+    """
+    APPA — Answer-Page Prediction Accuracy.
+
+    Args:
+        retrieved_pages: list (len = n questions). Element i is an ordered
+                         list of page numbers for that question's retrieved
+                         nodes, ranked by retrieval score (index 0 = top node).
+        gold_pages:      list (len = n questions). Element i is the gold
+                         answer page (int), or a list/set of acceptable pages.
+        k_values:        cut-offs to report success@k at.
+
+    Returns:
+        {'appa@1':.., 'appa@5':.., 'appa@10':.., 'appa':..}
+        where 'appa' aliases the largest-k value (full retrieved set).
+    """
+    assert len(retrieved_pages) == len(gold_pages), "Length mismatch"
+    n = len(gold_pages)
+    if n == 0:
+        out = {f"appa@{k}": 0.0 for k in k_values}
+        out["appa"] = 0.0
+        return out
+
+    out = {}
+    for k in k_values:
+        hits = 0
+        for pages, gold in zip(retrieved_pages, gold_pages):
+            gold_set = (set(gold) if isinstance(gold, (list, set, tuple))
+                        else {gold})
+            if any(p in gold_set for p in list(pages)[:k]):
+                hits += 1
+        out[f"appa@{k}"] = hits / n
+    out["appa"] = out[f"appa@{max(k_values)}"]
+    return out
+
+
 # ─── Consolidated metric report ───────────────────────────────────────────────
 
 def compute_all_metrics(
@@ -182,9 +233,17 @@ def compute_all_metrics(
     gold_answers: list[Union[str, list[str]]],
     is_answerable: list[bool],
     refused_flags: list[bool],
+    retrieved_pages: list = None,
+    gold_pages: list = None,
 ) -> dict:
-    """Run all metrics and return a consolidated results dict."""
-    return {
+    """
+    Run all metrics and return a consolidated results dict.
+
+    If `retrieved_pages` and `gold_pages` are supplied, APPA (Answer-Page
+    Prediction Accuracy) is included. Omitting them keeps the call
+    backward-compatible with callers that only have answer-level outputs.
+    """
+    result = {
         "anls":  compute_anls(predictions, gold_answers),
         "f1":    compute_f1(predictions, gold_answers),
         "accuracy": compute_accuracy(predictions, gold_answers),
@@ -194,3 +253,7 @@ def compute_all_metrics(
         "n_unanswerable": sum(not a for a in is_answerable),
         "n_refused":      sum(refused_flags),
     }
+    if retrieved_pages is not None and gold_pages is not None:
+        result.update(
+            compute_answer_page_accuracy(retrieved_pages, gold_pages))
+    return result
