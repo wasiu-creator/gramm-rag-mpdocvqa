@@ -231,12 +231,15 @@ class SelfHealingRetriever:
         """
         from src.retrieval.hgt_model import retrieve_top_k
 
-        # Encode graph nodes through HGT
+        # Encode graph nodes through HGT, then project the raw query into the
+        # same space via the HGT's trained input layer. encode_nodes runs
+        # forward() first, so node_lin is initialised before encode_query.
         with torch.no_grad():
             node_emb_dict = self.hgt.encode_nodes(
                 graph_data.x_dict if hasattr(graph_data, "x_dict") else {},
                 graph_data.edge_index_dict if hasattr(graph_data, "edge_index_dict") else {},
             )
+            query_emb = self.hgt.encode_query(query_emb)
 
         k = self.top_k
         for round_i in range(self.max_rounds + 1):

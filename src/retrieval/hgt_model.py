@@ -117,10 +117,23 @@ class DocumentHGT(nn.Module):
 
     def encode_query(self, query_emb: torch.Tensor) -> torch.Tensor:
         """
-        Project a raw query embedding (256-dim) to the HGT output space.
-        Used at retrieval time: query never passes through HGT (no graph).
+        Project a raw query embedding (E5 space) into the same space the
+        node features enter the HGT, via the TRAINABLE text input layer
+        (node_lin['text'] + GELU), then L2-normalise.
+
+        This makes the query question-conditioned and trained jointly with
+        the nodes (Phase 5 InfoNCE), replacing the old identity-normalise
+        which silently assumed the query was already in node space.
+
+        Note: node_lin is a lazy Linear(-1, hidden) — it is initialised by
+        the first forward()/encode_nodes() call, which retrieval performs
+        before encode_query(), so the layer exists when this runs.
         """
-        return F.normalize(query_emb, dim=-1)
+        if "text" in self.node_lin:
+            q = F.gelu(self.node_lin["text"](query_emb))
+        else:
+            q = query_emb
+        return F.normalize(q, dim=-1)
 
     def encode_nodes(self, x_dict: dict, edge_index_dict: dict) -> dict:
         """Forward + L2-normalise all node embeddings."""
