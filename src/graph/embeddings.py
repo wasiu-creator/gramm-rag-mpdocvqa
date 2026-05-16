@@ -240,12 +240,19 @@ def compute_and_save_embeddings(
     doc_id = parsed["doc_id"]
     out_text = Path(out_dir) / f"{doc_id}_text.pt"
     out_img  = Path(out_dir) / f"{doc_id}_img.pt"
+    # Raw (un-projected) E5 text embeddings, kept for semantic vector retrieval.
+    # The projected _text.pt feeds the HGT graph; _text_raw.pt feeds FAISS so
+    # queries can be embedded into the SAME E5 space (the projection layer is
+    # random/per-doc/unsaved and cannot be reproduced for a query).
+    out_text_raw = Path(out_dir) / f"{doc_id}_text_raw.pt"
 
-    if out_text.exists() and out_img.exists() and not force:
+    if (out_text.exists() and out_img.exists() and out_text_raw.exists()
+            and not force):
         logger.info(f"Embeddings cached for {doc_id}, skipping.")
         return {
             "text": torch.load(out_text, weights_only=True),
             "img":  torch.load(out_img,  weights_only=True),
+            "text_raw": torch.load(out_text_raw, weights_only=True),
         }
 
     elements = parsed["elements"]
@@ -260,6 +267,9 @@ def compute_and_save_embeddings(
     if device == "cuda":
         torch.cuda.empty_cache()
     logger.info(f"Text embeddings: {raw_text_emb.shape}")
+
+    # Persist the RAW E5 text embeddings (pre-projection) for vector retrieval.
+    torch.save(raw_text_emb, out_text_raw)
 
     # ── Step 2: Image embeddings ─────────────────────────────────────────────
     has_images = any(e.get("type") in ("figure", "image") for e in elements)
@@ -294,4 +304,4 @@ def compute_and_save_embeddings(
     torch.save(img_emb,  out_img)
     logger.info(f"Saved embeddings for {doc_id} → {out_dir}")
 
-    return {"text": text_emb, "img": img_emb}
+    return {"text": text_emb, "img": img_emb, "text_raw": raw_text_emb}
