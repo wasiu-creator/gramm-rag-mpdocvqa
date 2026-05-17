@@ -115,8 +115,16 @@ def _get_format_instruction(benchmark: str) -> str:
             "Answer concisely. Cite the page number if relevant (e.g., 'Page 5: ...')."
         ),
         "mpdocvqa": (
-            "Answer with a short phrase or sentence extracted from the document. "
-            "Do not add information not present in the context."
+            "Output ONLY the exact answer value copied verbatim from the "
+            "document. Do NOT include labels, field names, the question text, "
+            "explanations, or any preamble. MP-DocVQA answers are short atoms: "
+            "a number, a name, a date, or a brief entity. If the answer is "
+            "numeric, give digits only (keep a unit/symbol only if it is part "
+            "of the gold value, e.g. 41.09%). "
+            "Examples -- "
+            "Q: What is the paper code? A: 12427 | "
+            "Q: Total number of responses? A: 27 | "
+            "Q: Who is the venue owner? A: Richard Flemming"
         ),
         "multimodalqa": (
             "Answer the question using both textual and visual evidence from the context."
