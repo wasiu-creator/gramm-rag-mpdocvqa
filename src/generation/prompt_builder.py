@@ -64,15 +64,25 @@ def build_prompt(
 
         elem = typed[local_idx]
         text = elem.get("text", "").strip()
-        page = elem.get("page_no", "?")
-        temporal = [m["text"] for m in elem.get("temporal_markers", [])]
-        time_str = f" [Time: {', '.join(temporal)}]" if temporal else ""
+        if not text:
+            continue
 
-        block = f"[{ntype.upper()} | Page {page}{time_str}]\n{text}"
+        if benchmark == "mpdocvqa":
+            # MP-DocVQA answers are short verbatim spans. The [TYPE|Page|Time]
+            # decoration leaks into answers (e.g. the model returns "Time:
+            # 1976"). Feed clean reading-order text only.
+            block = text
+        else:
+            page = elem.get("page_no", "?")
+            temporal = [m["text"] for m in elem.get("temporal_markers", [])]
+            time_str = f" [Time: {', '.join(temporal)}]" if temporal else ""
+            block = f"[{ntype.upper()} | Page {page}{time_str}]\n{text}"
+
         context_blocks.append(block)
         total_chars += len(block)
 
-    context_str = "\n\n---\n\n".join(context_blocks) if context_blocks else "(No relevant context retrieved)"
+    sep = "\n" if benchmark == "mpdocvqa" else "\n\n---\n\n"
+    context_str = sep.join(context_blocks) if context_blocks else "(No relevant context retrieved)"
 
     # ── Format instructions per benchmark ────────────────────────────────────
     format_instruction = _get_format_instruction(benchmark)
